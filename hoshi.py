@@ -1,4 +1,4 @@
-from typing import Optional, Hashable, NamedTuple
+from typing import Optional, Union, NamedTuple, Literal
 
 """
 
@@ -79,13 +79,16 @@ def divider(length: int = 60):
 def _ljustFilling(
     previous: str,
     length: Optional[int] = None,
-    filler: str = '-'
+    filler: str = '-',
 ) -> tuple[str, int]:
 
     previous = str(previous)
+    previous_len = len(previous)
     if length is None or length == 0:
-        length = len(previous)
-        length = 5*(int(length/5)+2)
+        length = 5*(int(len(previous)/5)+2)
+    else:
+        if length < previous_len + 1:
+            length = previous_len
 
     return (previous+' ').ljust(length, filler)+' ', length
 
@@ -105,7 +108,7 @@ def itemize(
     hint_itemize: str = '#',
 
     export_len: bool = False,
-):
+) -> Union[str, tuple[str, str], tuple[str, int, int]]:
     """_summary_
 
     Args:
@@ -116,6 +119,7 @@ def itemize(
     description = str(description)
 
     content = ''
+    brokelinehint = ''
     if not value is None:
         value = str(value)
         subscribe_str, ljust_description_len = _ljustFilling(
@@ -146,17 +150,23 @@ def itemize(
         if ljust_value_len > ljust_value_max_len:
             ljust_value_len = 0
             content += ' '+str(value)
-            content += '\n'+(" "*(2*listing_level))+hint
+            brokelinehint += ' '+(" "*(2*listing_level))+hint
+            print(content)
+            print(brokelinehint)
         else:
             content += value_str+' '+hint_itemize+' '+hint
     else:
         if not value is None:
             content += ' '+str(value)
-
+\
     if export_len:
         return content, ljust_description_len, ljust_value_len
     else:
-        return content
+        if brokelinehint != '':
+            print('lelelel')
+            return content, brokelinehint
+        else:
+            return content
 
 
 class Hoshi:
@@ -166,6 +176,7 @@ class Hoshi:
     __name__ = 'Hoshi'
 
     class _config_container(NamedTuple):
+        # itemize
         listing_level: int = 1
         listing_itemize: str = '-'
         ljust_description_len: Optional[int] = None
@@ -174,7 +185,26 @@ class Hoshi:
         ljust_value_filler: str = '.'
         ljust_value_max_len: int = 40
         hint_itemize: str = '#'
+        
+        #divider
         divider_length: int = 60
+        
+        @property
+        def _itemize_fields(self) -> tuple[str]:
+            return (
+                'listing_level',
+                'listing_itemize',
+                'ljust_description_len',
+                'ljust_description_filler',
+                'ljust_value_len',
+                'ljust_value_filler',
+                'ljust_value_max_len',
+                'hint_itemize'
+            )
+            
+        @property
+        def _divider_fields(self) -> tuple[str]:
+            return ('divider_length')
 
     def __init__(
         self,
@@ -265,14 +295,31 @@ class Hoshi:
             'ljust_value_filler': ljust_value_filler,
             'ljust_value_max_len': ljust_value_max_len,
             'hint_itemize': hint_itemize,
+            
             'divider_length': divider_length,
         })
         self._update()
 
+    def _item_input_handler(
+        self, 
+        type: Literal['itemize'], 
+        item_input: dict[str, any] = {},
+        mode: Literal['add', 'config'] = 'add'
+    ) -> dict[str, any]:
+
+        if type == 'itemize':
+            for k in self._config._itemize_fields:
+                item_input[k] = getattr(self._config, k) if k not in item_input else item_input[k]
+            if mode == 'config':
+                item_input['ljust_description_len'] = 0
+                item_input['ljust_value_len'] = 0
+
+        return item_input
+
     def _update(self):
-        self._print_list = []
+        self._print_lines = []
         _formated = []
-        
+
         for item_raw in self._raw:
             item = {}
             if isinstance(item_raw, dict):
@@ -322,64 +369,67 @@ class Hoshi:
             item_input = {k: v for k, v in item.items() if k != 'type'}
             # config
             if item['type'] == 'itemize':
-                item_input['listing_itemize'] = self._config.listing_itemize if 'listing_itemize' not in item_input else item_input['listing_itemize']
-                item_input['ljust_description_len'] = 0 if 'ljust_description_len' not in item_input else item_input['ljust_description_len']
-                item_input['ljust_description_filler'] = self._config.ljust_description_filler if 'ljust_description_filler' not in item_input else item_input['ljust_description_filler']
-                item_input['ljust_value_len'] = 0 if 'ljust_value_len' not in item_input else item_input['ljust_value_len']
-                item_input['ljust_value_filler'] = self._config.ljust_value_filler if 'ljust_value_filler' not in item_input else item_input['ljust_value_filler']
-                item_input['ljust_value_max_len'] = self._config.ljust_value_max_len if 'ljust_value_max_len' not in item_input else item_input['ljust_value_max_len']
-                item_input['hint_itemize'] = self._config.hint_itemize if 'hint_itemize' not in item_input else item_input['hint_itemize']
+                item_input = self._item_input_handler('itemize', item_input, mode='config')
                 content, ljust_description_len, ljust_value_len = itemize(
-                    **item_input,
-                    export_len=True
-                )
+                    **item_input, export_len=True)
                 if ljust_description_len > self._config.ljust_description_len:
                     self._config = self._config._replace(
                         ljust_description_len=ljust_description_len)
                 if ljust_value_len > self._config.ljust_value_len:
                     self._config = self._config._replace(
                         ljust_value_len=ljust_value_len)
-            
+
             _formated.append(item)
 
         for item in _formated:
             item_input = {k: v for k, v in item.items() if k != 'type'}
-            
+
             # string add
             if item['type'] in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
-                self._print_list.append(hnprint(**item_input))
+                self._print_lines.append(hnprint(**item_input))
             elif item['type'] == 'txt':
-                self._print_list.append(self.txt(**item_input))
+                self._print_lines.append(self.txt(**item_input))
             elif item['type'] == 'divider':
-                self._print_list.append(divider(**item_input))
+                self._print_lines.append(divider(**item_input))
             elif item['type'] == 'itemize':
-                item_input['ljust_description_len'] = self._config.ljust_description_len
-                item_input['ljust_value_len'] = self._config.ljust_value_len
+                item_input = self._item_input_handler('itemize', item_input)
                 content = itemize(**item_input)
-                self._print_list.append(content)
+                if isinstance(content, str):
+                    self._print_lines.append(content)
+                else:
+                    print(content)
+                    mainline, brokelinehint = content
+                    self._print_lines.append(mainline)
+                    self._print_lines.append(brokelinehint)
             else:
-                raise ValueError("Unknown print type.")
+                raise TypeError(
+                    f"Unknown item type. '{item['type']}', '{type(item)}'.")
 
     def __str__(self):
+        self._update()
         content = ''
-        for item in self._print_list:
+        for item in self._print_lines:
             content += item
             content += '\n'
         return content
 
     def __repr__(self):
-
         content = self.__str__()
         content += f'by <{self.__name__}>'
         return content
 
     def print(self):
-        for item in self._print_list:
+        self._update()
+        for item in self._print_lines:
             print(item)
-    
+
     def newline(self, item):
         self._raw.append(item)
+
+    @property
+    def lines(self) -> list[str]:
         self._update()
+        return self._print_lines
 
     def h1(self, text: str):
         return hnprint(text, heading=1)
