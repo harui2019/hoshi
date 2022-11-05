@@ -87,7 +87,7 @@ def _ljustFilling(
     if length is None or length == 0:
         length = 5*(int(len(previous)/5)+2)
     else:
-        if length < previous_len + 1:
+        if length > previous_len + 1:
             length = previous_len
 
     return (previous+' ').ljust(length, filler)+' ', length
@@ -158,7 +158,10 @@ def itemize(
     else:
         if not value is None:
             content += ' '+str(value)
-\
+
+    print(content)
+    print(brokelinehint)
+    print(ljust_description_len, ljust_value_len, ljust_value_max_len, export_len)
     if export_len:
         return content, ljust_description_len, ljust_value_len
     else:
