@@ -151,8 +151,6 @@ def itemize(
             ljust_value_len = 0
             content += ' '+str(value)
             brokelinehint += ' '+(" "*(2*listing_level))+hint
-            print(content)
-            print(brokelinehint)
         else:
             content += value_str+' '+hint_itemize+' '+hint
     else:
