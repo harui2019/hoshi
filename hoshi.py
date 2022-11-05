@@ -83,14 +83,15 @@ def _ljustFilling(
 ) -> tuple[str, int]:
 
     previous = str(previous)
-    previous_len = len(previous)
     if length is None or length == 0:
-        length = 5*(int(len(previous)/5)+2)
-    else:
-        if length > previous_len + 1:
-            length = previous_len
+        length = len(previous)
+        length = 5*(int(length/5)+2)
 
-    return (previous+' ').ljust(length, filler)+' ', length
+    new_str = (previous+' ').ljust(length, filler)
+    if len(new_str) > length:
+        length = len(new_str)
+
+    return new_str+' ', length
 
 
 def itemize(
@@ -149,14 +150,14 @@ def itemize(
             )
         if ljust_value_len > ljust_value_max_len:
             ljust_value_len = 0
-            content += ' '+str(value)
+            content += str(value)
             brokelinehint += ' '+(" "*(2*listing_level))+hint
         else:
             content += value_str+' '+hint_itemize+' '+hint
     else:
         if not value is None:
-            content += ' '+str(value)
-            
+            content += str(value)
+
     if export_len:
         return content, ljust_description_len, ljust_value_len
     else:
@@ -183,10 +184,10 @@ class Hoshi:
         ljust_value_filler: str = '.'
         ljust_value_max_len: int = 40
         hint_itemize: str = '#'
-        
-        #divider
+
+        # divider
         divider_length: int = 60
-        
+
         @property
         def _itemize_fields(self) -> tuple[str]:
             return (
@@ -199,7 +200,7 @@ class Hoshi:
                 'ljust_value_max_len',
                 'hint_itemize'
             )
-            
+
         @property
         def _divider_fields(self) -> tuple[str]:
             return ('divider_length')
@@ -293,21 +294,22 @@ class Hoshi:
             'ljust_value_filler': ljust_value_filler,
             'ljust_value_max_len': ljust_value_max_len,
             'hint_itemize': hint_itemize,
-            
+
             'divider_length': divider_length,
         })
         self._update()
 
     def _item_input_handler(
-        self, 
-        type: Literal['itemize'], 
+        self,
+        type: Literal['itemize'],
         item_input: dict[str, any] = {},
         mode: Literal['add', 'config'] = 'add'
     ) -> dict[str, any]:
 
         if type == 'itemize':
             for k in self._config._itemize_fields:
-                item_input[k] = getattr(self._config, k) if k not in item_input else item_input[k]
+                item_input[k] = getattr(
+                    self._config, k) if k not in item_input else item_input[k]
             if mode == 'config':
                 item_input['ljust_description_len'] = 0
                 item_input['ljust_value_len'] = 0
@@ -367,7 +369,8 @@ class Hoshi:
             item_input = {k: v for k, v in item.items() if k != 'type'}
             # config
             if item['type'] == 'itemize':
-                item_input = self._item_input_handler('itemize', item_input, mode='config')
+                item_input = self._item_input_handler(
+                    'itemize', item_input, mode='config')
                 content, ljust_description_len, ljust_value_len = itemize(
                     **item_input, export_len=True)
                 if ljust_description_len > self._config.ljust_description_len:
