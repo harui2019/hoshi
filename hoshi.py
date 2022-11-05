@@ -158,10 +158,7 @@ def itemize(
     else:
         if not value is None:
             content += ' '+str(value)
-
-    print(content)
-    print(brokelinehint)
-    print(ljust_description_len, ljust_value_len, ljust_value_max_len, export_len)
+            
     if export_len:
         return content, ljust_description_len, ljust_value_len
     else:
@@ -400,7 +397,6 @@ class Hoshi:
                 if isinstance(content, str):
                     self._print_lines.append(content)
                 else:
-                    print(content)
                     mainline, brokelinehint = content
                     self._print_lines.append(mainline)
                     self._print_lines.append(brokelinehint)
