@@ -207,7 +207,7 @@ class Hoshi:
 
     def __init__(
         self,
-        raw: list[tuple[str]],
+        raw: list[tuple[str]] = [],
         name: str = 'Hoshi',
 
         listing_level: int = 1,
