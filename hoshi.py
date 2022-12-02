@@ -1,4 +1,4 @@
-from typing import Optional, Union, NamedTuple, Literal
+from typing import Optional, Union, NamedTuple, Literal, Any, overload
 
 """
 
@@ -94,9 +94,35 @@ def _ljustFilling(
     return new_str+' ', length
 
 
+@overload
 def itemize(
     description: str,
-    value: Optional[any] = None,
+    *,
+    export_len: Literal[True],
+) -> tuple[str, int, int]:
+    ...
+
+
+@overload
+def itemize(
+    description: str,
+    *,
+    independent_newline: Literal[True],
+) -> Union[tuple[str, str], str]:
+    ...
+
+@overload
+def itemize(
+    description: str,
+    *,
+    export_len: bool,
+    independent_newline: bool,
+) -> str:
+    ...
+
+def itemize(
+    description: str,
+    value: Optional[Any] = None,
     hint: Optional[str] = None,
     listing_level: int = 1,
 
@@ -109,12 +135,13 @@ def itemize(
     hint_itemize: str = '#',
 
     export_len: bool = False,
-) -> Union[str, tuple[str, str], tuple[str, int, int]]:
+    independent_newline: bool = False,
+):
     """_summary_
 
     Args:
         subscribe (str): _description_
-        value (any): _description_
+        value (Any): _description_
         hint (str, optional): _description_. Defaults to ''.
     """
     description = str(description)
@@ -162,8 +189,10 @@ def itemize(
         return content, ljust_description_len, ljust_value_len
     else:
         if brokelinehint != '':
-            print('lelelel')
-            return content, brokelinehint
+            if independent_newline:
+                return content, brokelinehint
+            else:
+                return content+brokelinehint
         else:
             return content
 
@@ -178,9 +207,9 @@ class Hoshi:
         # itemize
         listing_level: int = 1
         listing_itemize: str = '-'
-        ljust_description_len: Optional[int] = None
+        ljust_description_len: int = 0
         ljust_description_filler: str = '-'
-        ljust_value_len: Optional[int] = None
+        ljust_value_len: int = 40
         ljust_value_filler: str = '.'
         ljust_value_max_len: int = 40
         hint_itemize: str = '#'
@@ -189,7 +218,7 @@ class Hoshi:
         divider_length: int = 60
 
         @property
-        def _itemize_fields(self) -> tuple[str]:
+        def _itemize_fields(self) -> tuple[str, ...]:
             return (
                 'listing_level',
                 'listing_itemize',
@@ -202,8 +231,8 @@ class Hoshi:
             )
 
         @property
-        def _divider_fields(self) -> tuple[str]:
-            return ('divider_length')
+        def _divider_fields(self) -> tuple[str, ...]:
+            return ('divider_length', )
 
     def __init__(
         self,
@@ -302,9 +331,9 @@ class Hoshi:
     def _item_input_handler(
         self,
         type: Literal['itemize'],
-        item_input: dict[str, any] = {},
+        item_input: dict[str, Any] = {},
         mode: Literal['add', 'config'] = 'add'
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
 
         if type == 'itemize':
             for k in self._config._itemize_fields:
@@ -371,7 +400,7 @@ class Hoshi:
             if item['type'] == 'itemize':
                 item_input = self._item_input_handler(
                     'itemize', item_input, mode='config')
-                content, ljust_description_len, ljust_value_len = itemize(
+                (content, ljust_description_len, ljust_value_len) = itemize(
                     **item_input, export_len=True)
                 if ljust_description_len > self._config.ljust_description_len:
                     self._config = self._config._replace(
@@ -394,7 +423,7 @@ class Hoshi:
                 self._print_lines.append(divider(**item_input))
             elif item['type'] == 'itemize':
                 item_input = self._item_input_handler('itemize', item_input)
-                content = itemize(**item_input)
+                content = itemize(**item_input, independent_newline=True)
                 if isinstance(content, str):
                     self._print_lines.append(content)
                 else:
@@ -457,13 +486,8 @@ class Hoshi:
 
     def itemize(
         self,
-        desc: str,
-        value: Optional[any] = None,
-        hint: str = '',
+        *args, **kwargs
     ):
         return itemize(
-            description=desc,
-            value=value,
-            hint=hint,
-            **self._config._asdict(),
+            *args, **kwargs, **self._config._asdict(),
         )
