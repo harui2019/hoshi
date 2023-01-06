@@ -1,4 +1,5 @@
 from typing import Optional, Union, NamedTuple, Literal, Any, overload
+import pprint
 
 """
 
@@ -149,7 +150,11 @@ def itemize(
     content = ''
     brokelinehint = ''
     if not value is None:
-        value = str(value)
+        if isinstance(value, [list, tuple, dict]):
+            value = pprint.pformat(value)
+        else:
+            value = str(value)
+        
         subscribe_str, ljust_description_len = _ljustFilling(
             previous=description,
             length=ljust_description_len,
