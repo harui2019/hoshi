@@ -237,7 +237,7 @@ class Hoshi:
                 'ljust_value_len',
                 'ljust_value_filler',
                 'ljust_value_max_len',
-                'max_value_len'
+                'max_value_len',
                 'hint_itemize'
             )
 
