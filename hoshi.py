@@ -133,6 +133,7 @@ def itemize(
     ljust_value_len: int = 0,
     ljust_value_filler: str = '.',
     ljust_value_max_len: int = 40,
+    max_value_len: int = 2000,
     hint_itemize: str = '#',
 
     export_len: bool = False,
@@ -154,6 +155,9 @@ def itemize(
             value = pprint.pformat(value)
         else:
             value = str(value)
+            
+        if len(value) > max_value_len:
+            value = value[:max_value_len]+'...'
         
         subscribe_str, ljust_description_len = _ljustFilling(
             previous=description,
@@ -217,6 +221,7 @@ class Hoshi:
         ljust_value_len: int = 40
         ljust_value_filler: str = '.'
         ljust_value_max_len: int = 40
+        max_value_len: int = 2000
         hint_itemize: str = '#'
 
         # divider
@@ -232,6 +237,7 @@ class Hoshi:
                 'ljust_value_len',
                 'ljust_value_filler',
                 'ljust_value_max_len',
+                'max_value_len'
                 'hint_itemize'
             )
 
@@ -252,6 +258,7 @@ class Hoshi:
         ljust_value_filler: str = '.',
         ljust_value_max_len: int = 40,
         hint_itemize: str = '#',
+        max_value_len: int = 2000,
         divider_length: int = 60,
         **kwargs
     ):
@@ -327,6 +334,7 @@ class Hoshi:
             'ljust_value_len': ljust_value_len,
             'ljust_value_filler': ljust_value_filler,
             'ljust_value_max_len': ljust_value_max_len,
+            'max_value_len': max_value_len,
             'hint_itemize': hint_itemize,
 
             'divider_length': divider_length,
