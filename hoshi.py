@@ -151,7 +151,7 @@ def itemize(
     content = ''
     brokelinehint = ''
     if not value is None:
-        if isinstance(value, [list, tuple, dict]):
+        if isinstance(value, (list, tuple, dict)):
             value = pprint.pformat(value)
         else:
             value = str(value)
