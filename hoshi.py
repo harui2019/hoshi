@@ -51,7 +51,7 @@ Hoshi - A process content printer ?
 """
 
 
-def hnprint(title, heading=3):
+def hnprint(title, heading=3, raw_input=False):
     """Print a title.
 
     Args:
@@ -61,20 +61,44 @@ def hnprint(title, heading=3):
     Returns:
         _type_: _description_
     """
-    content = " "+"#"*heading+" {}".format(title)
 
-    return content
+    if raw_input:
+        return {
+            'type': 'h'+str(heading),
+            'heading': heading,
+            'title': title,
+        }
+    else:
+        content = " "+"#"*heading+" {}".format(title)
+        return content
 
 
-def divider(length: int = 60):
+def divider(length: int = 60, raw_input=False):
     """Print a divider.
 
     Args:
         length (int, optional): Length of the divider. Defaults to 60.
     """
-    content = "-"*length
 
-    return content
+    if raw_input:
+        return {
+            'type': 'divider',
+            'length': length,
+        }
+    else:
+        content = "-"*length
+        return content
+
+
+def txt(text: str, listing_level: int = 1, raw_input=False):
+    if raw_input:
+        return {
+            'type': 'txt',
+            'listing_level': listing_level,
+            'text': text,
+        }
+    else:
+        return (" "*(2*listing_level-1))+str(text)
 
 
 def _ljustFilling(
@@ -112,6 +136,7 @@ def itemize(
 ) -> Union[tuple[str, str], str]:
     ...
 
+
 @overload
 def itemize(
     description: str,
@@ -120,6 +145,7 @@ def itemize(
     independent_newline: bool,
 ) -> str:
     ...
+
 
 def itemize(
     description: str,
@@ -151,14 +177,12 @@ def itemize(
     content = ''
     brokelinehint = ''
     if not value is None:
-        if isinstance(value, (list, tuple, dict)):
-            value = pprint.pformat(value)
-        else:
-            value = str(value)
-            
+        value = pprint.pformat(value) if isinstance(
+            value, (list, tuple, dict)) else str(value)
+
         if len(value) > max_value_len:
             value = value[:max_value_len]+'...'
-        
+
         subscribe_str, ljust_description_len = _ljustFilling(
             previous=description,
             length=ljust_description_len,
@@ -431,7 +455,7 @@ class Hoshi:
             if item['type'] in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
                 self._print_lines.append(hnprint(**item_input))
             elif item['type'] == 'txt':
-                self._print_lines.append(self.txt(**item_input))
+                self._print_lines.append(txt(**item_input))
             elif item['type'] == 'divider':
                 self._print_lines.append(divider(**item_input))
             elif item['type'] == 'itemize':
@@ -474,33 +498,40 @@ class Hoshi:
         return self._print_lines
 
     def h1(self, text: str):
-        return hnprint(text, heading=1)
+        self._raw.append(hnprint(text, heading=1, raw_input=True))
 
     def h2(self, text: str):
-        return hnprint(text, heading=2)
+        self._raw.append(hnprint(text, heading=2, raw_input=True))
 
     def h3(self, text: str):
-        return hnprint(text, heading=3)
+        self._raw.append(hnprint(text, heading=3, raw_input=True))
 
     def h4(self, text: str):
-        return hnprint(text, heading=4)
+        self._raw.append(hnprint(text, heading=4, raw_input=True))
 
     def h5(self, text: str):
-        return hnprint(text, heading=5)
+        self._raw.append(hnprint(text, heading=5, raw_input=True))
 
     def h6(self, text: str):
-        return hnprint(text, heading=6)
+        self._raw.append(hnprint(text, heading=6, raw_input=True))
 
     def txt(self, text: str, listing_level: int = 1):
-        return (" "*(2*listing_level-1))+str(text)
+        self._raw.append(txt(text, listing_level, raw_input=True))
 
     def divider(self, length: int = 60):
-        return divider(length)
+        self._raw.append(divider(length, raw_input=True))
 
     def itemize(
         self,
-        *args, **kwargs
+        description: str,
+        value: str = None,
+        hint: str = None,
+        listing_level: int = 1,
     ):
-        return itemize(
-            *args, **kwargs, **self._config._asdict(),
-        )
+        self._raw.append({
+            'type': 'itemize',
+            'description': description,
+            'value': value,
+            'hint': hint,
+            'listing_level': listing_level,
+        })
